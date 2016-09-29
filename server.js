@@ -9,6 +9,10 @@ var todos = [{
 	id: 2,
 	description: 'Go to market',
 	completed:false
+},{
+	id:3,
+	description: 'take dogs for a walk',
+	completed:false
 }];
 
 //create a get 
