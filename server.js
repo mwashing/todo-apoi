@@ -23,6 +23,7 @@ app.get('/',function(req,res){
 	return res.send('Todo API root');
 });
 
+// /todos?completed=true&q=work
 app.get('/todos', function(req,res){
 	// check for query paramaters
 	var queryParams = req.query;
@@ -32,6 +33,13 @@ app.get('/todos', function(req,res){
 		filteredTodos  = _.where(filteredTodos,{completed:true});
 	} else if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'false'){
 		filteredTodos  = _.where(filteredTodos,{completed:false});
+	}
+
+	if(queryParams.hasOwnProperty('q') && queryParams.q.trim().length > 0){
+		console.log("looking for q property: " + queryParams.q);
+		filteredTodos = _.filter(filteredTodos, function(todo){
+			return todo.description.toLowerCase().includes(queryParams.q.toLowerCase());
+		});
 	}
 
 	return res.json(filteredTodos);
@@ -84,8 +92,6 @@ app.put('/todos/:id',function(req,res){
 	if(!matchedTodo){
 		return res.status(404).send();
 	}
-
-
 	// check for valid completed attribute
 	if(body.hasOwnProperty('completed') && _.isBoolean(body.completed)){
 		validAttributes.completed  = body.completed;
