@@ -23,9 +23,18 @@ app.get('/',function(req,res){
 	return res.send('Todo API root');
 });
 
-// get request to show all todos
 app.get('/todos', function(req,res){
-	return res.json(todos);
+	// check for query paramaters
+	var queryParams = req.query;
+	var filteredTodos = todos;
+
+	if(queryParams.hasOwnProperty('completed') && queryParams.completed === 'true'){
+		filteredTodos  = _.where(filteredTodos,{completed:true});
+	} else if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'false'){
+		filteredTodos  = _.where(filteredTodos,{completed:false});
+	}
+
+	return res.json(filteredTodos);
 });
 
 // post request to create a new todo
