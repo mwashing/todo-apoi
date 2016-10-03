@@ -20,25 +20,26 @@ function findTodo(todoId){
 app.use(bodyParser.json());
 //create a get 
 app.get('/',function(req,res){
-	res.send('Todo API root');
+	return res.send('Todo API root');
 });
 
 // get request to show all todos
 app.get('/todos', function(req,res){
-	res.json(todos);
+	return res.json(todos);
 });
 
 // post request to create a new todo
 app.post('/todos', function(req,res){
-	var body = req.body;
-	body = _.pick(body,'description','completed');
+	var body = _.pick(req.body,'description','completed');
+	
 	if(!_.isBoolean(body.completed) || !_.isString(body.description) || body.description.trim().length === 0){
 		return res.status(400).send("Invalid Parameters");
 	}
+
 	body.description = body.description.trim();
 	body.id = todoNextId++;
 	todos.push(body);
-	res.json(body);
+	return res.json(body);
 });
 
 // get request to get a single todo
@@ -46,49 +47,53 @@ app.get('/todos/:id', function(req,res){
 	var todoId = parseInt(req.params.id,10);
 	var matchedtodo = _.findWhere(todos,{id:todoId});
 	if(matchedtodo){
-		res.json(matchedtodo)
+		return res.json(matchedtodo)
 	}else{
-		res.status(404).send("Could not find the requested item");
+		return res.status(404).send("Could not find the requested item");
 	}
 });
 
 // delete request to remove single todo
 app.delete('/todos/:id',function(req,res){
-	var matchedTodo = findTodo(parseInt(req.params.id));
+	var todoId = parseInt(req.params.id);
+	var matchedTodo = _.findWhere(todos,{id:todoId});
 	if(matchedTodo){
-		for(var i = 0; i < todos.length; i++){
-			if(todos[i].id == matchedTodo.id){
-				todos.splice(i,1);
-				res.status(200).send('Item sucessfull removed');
-			}
-		}	
+		todos = _.without(todos,matchedTodo);
+		return res.json(matchedTodo);
 	}else{
-		res.status(404).send("Item not found to remove");
+		return res.status(404).send("Item not found to remove");
 	}
 });
 
 //put request to update todo 
-app.put('/todos/:id/:description/:completed',function(req,res){
-	var id = req.params.id;
-	var description = req.params.description;
-	var completed = req.params.completed;
-// verifiy that the input is legal
-	var newTodo = {
-		id: id,
-		description: description,
-		completed: completed
-	};
-	var matchedTodo = findTodo(parseInt(id));
-	if(matchedTodo){
-		for(var i = 0; i < todos.length; i++){
-			if(todos[i].id === matchedTodo.id){
-				todos.splice(i,1,newTodo);
-				res.status(200).send("Item successfully updated");
-			}
-		};
-	}else{
-		res.status(404).send("Item not found to update");
+app.put('/todos/:id',function(req,res){
+	var todoId = parseInt(req.params.id);
+	var matchedTodo = _.findWhere(todos,{id:todoId});
+	var body = _.pick(req.body,'completed','description');
+	var validAttributes = {};
+
+	if(!matchedTodo){
+		return res.status(404).send();
 	}
+
+
+	// check for valid completed attribute
+	if(body.hasOwnProperty('completed') && _.isBoolean(body.completed)){
+		validAttributes.completed  = body.completed;
+	} else if (body.hasOwnProperty('completed')) {
+		return res.status(400).send();
+	}
+	// check for valid description attribute
+	if(body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0){
+		validAttributes.description = body.description;
+	} else if (body.hasOwnProperty('description')){
+		return res.status(400).send();
+	}
+
+	// update current item
+	_.extend(matchedTodo,validAttributes);
+	return res.json(matchedTodo);
+
 });
 
 // open the port to listen on
