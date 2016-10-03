@@ -1,19 +1,9 @@
 var express = require("express");
+var bodyParser = require("body-parser");
 var app = express();
 var PORT = process.env.PORT || 3000;
-var todos = [{
-	id: 1,
-	description: 'Meet mom for lunch',
-	completed: false
-},{
-	id: 2,
-	description: 'Go to market',
-	completed:false
-},{
-	id:3,
-	description: 'take dogs for a walk',
-	completed:false
-}];
+var todos = [];
+var todoNextId = 1; 
 
 // helper functions
 function findTodo(todoId){
@@ -25,7 +15,8 @@ function findTodo(todoId){
 	});
 	return matchedTodo;
 }
-
+// add in any middleware
+app.use(bodyParser.json());
 //create a get 
 app.get('/',function(req,res){
 	res.send('Todo API root');
@@ -37,29 +28,12 @@ app.get('/todos', function(req,res){
 });
 
 // post request to create a new todo
-app.post('/todos/:id/:description/:completed', function(req,res){
-	var id = parseInt(req.params.id,10);
-	var description = req.params.description;
-	var completed = req.params.completed;
-	var matchedTodo; 
-	// check for undefined values
-	if(id && description && completed){
-		matchedTodo = findTodo(id);
-		if(matchedTodo){
-			res.status(404).send("Item ID already exists");
-		}else{
-			todos.push({
-				id:id,
-				description:description,
-				completed:completed
-			});
-		res.status(200).send('item sucessfully added to the todo list');
-		}
-
-	}
-	else{
-		res.status(400).send("Invalid paramaters");
-	}	
+app.post('/todos', function(req,res){
+	var body = req.body;
+	body.id = todoNextId++;
+	todos.push(body);
+	console.log('Description ' + body.description + "id: " + body.id);
+	res.json(body);
 });
 
 // get request to get a single todo
