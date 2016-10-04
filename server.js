@@ -59,12 +59,16 @@ app.post('/todos', function(req,res){
 // get request to get a single todo
 app.get('/todos/:id', function(req,res){
 	var todoId = parseInt(req.params.id,10);
-	var matchedtodo = _.findWhere(todos,{id:todoId});
-	if(matchedtodo){
-		return res.json(matchedtodo)
-	}else{
-		return res.status(404).send("Could not find the requested item");
-	}
+	db.todo.findById(todoId).then(function(todo){
+		if(!!todo){
+			res.json(todo.toJSON());
+		}
+		else{
+			res.status(400).send()
+		}
+	}).catch(function(e){
+		res.status(500).send();
+	});
 });
 
 // delete request to remove single todo
