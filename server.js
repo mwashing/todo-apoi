@@ -27,23 +27,44 @@ app.get('/',function(req,res){
 // /todos?completed=true&q=work
 app.get('/todos', function(req,res){
 	// check for query paramaters
-	var queryParams = req.query;
-	var filteredTodos = todos;
-
-	if(queryParams.hasOwnProperty('completed') && queryParams.completed === 'true'){
-		filteredTodos  = _.where(filteredTodos,{completed:true});
-	} else if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'false'){
-		filteredTodos  = _.where(filteredTodos,{completed:false});
+	var query = req.query;
+	var where = {};
+	console.log("checking for completed status");
+	if(query.hasOwnProperty('completed') && query.completed === 'true'){
+		where.completed = true; 
+		console.log("setting item to true");
+	} else if(query.hasOwnProperty('completed') && query.completed === 'false'){
+		where.completed = false;
+		console.log("setting item to false");
 	}
 
-	if(queryParams.hasOwnProperty('q') && queryParams.q.trim().length > 0){
-		console.log("looking for q property: " + queryParams.q);
-		filteredTodos = _.filter(filteredTodos, function(todo){
-			return todo.description.toLowerCase().includes(queryParams.q.toLowerCase());
-		});
+	if(query.hasOwnProperty('q') && query.q.length > 0) {
+		where.description = { $like: '%'+query.q+'%'};
 	}
 
-	return res.json(filteredTodos);
+	db.todo.findAll({
+		where: where
+	}).then(function(todos){
+		res.json(todos);
+	}).catch(function(e){
+		res.status(500).send(e);
+	});
+	// var filteredTodos = todos;
+
+	// if(queryParams.hasOwnProperty('completed') && queryParams.completed === 'true'){
+	// 	filteredTodos  = _.where(filteredTodos,{completed:true});
+	// } else if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'false'){
+	// 	filteredTodos  = _.where(filteredTodos,{completed:false});
+	// }
+
+	// if(queryParams.hasOwnProperty('q') && queryParams.q.trim().length > 0){
+	// 	console.log("looking for q property: " + queryParams.q);
+	// 	filteredTodos = _.filter(filteredTodos, function(todo){
+	// 		return todo.description.toLowerCase().includes(queryParams.q.toLowerCase());
+	// 	});
+	// }
+
+	//return res.json(filteredTodos);
 });
 
 // post request to create a new todo
