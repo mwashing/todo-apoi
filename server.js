@@ -98,29 +98,33 @@ app.delete('/todos/:id',function(req,res){
 //put request to update todo 
 app.put('/todos/:id',function(req,res){
 	var todoId = parseInt(req.params.id);
-	var matchedTodo = _.findWhere(todos,{id:todoId});
 	var body = _.pick(req.body,'completed','description');
-	var validAttributes = {};
+	var fieldsToUpdate = {};
 
-	if(!matchedTodo){
-		return res.status(404).send();
-	}
-	// check for valid completed attribute
-	if(body.hasOwnProperty('completed') && _.isBoolean(body.completed)){
-		validAttributes.completed  = body.completed;
-	} else if (body.hasOwnProperty('completed')) {
-		return res.status(400).send();
-	}
-	// check for valid description attribute
-	if(body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0){
-		validAttributes.description = body.description;
-	} else if (body.hasOwnProperty('description')){
-		return res.status(400).send();
-	}
+	// check for completed property
+	if(body.hasOwnProperty("completed")){
+		fieldsToUpdate.completed = body.completed;
+	} 
 
-	// update current item
-	_.extend(matchedTodo,validAttributes);
-	return res.json(matchedTodo);
+	// check for description property
+	if(body.hasOwnProperty("description")){
+		fieldsToUpdate.description = body.description;
+	} 
+
+	// execute update query
+	db.todo.findById(todoId).then(function(todo){
+		if(todo){
+			todo.update(fieldsToUpdate).then(function(todo){
+				res.json(todo.toJSON());
+			}, function(e){
+				res.status(400).json(e);
+			});
+		}else{
+			res.status(404).send();
+		}
+	}, function(){
+		res.status(500).send();
+	});
 
 });
 
