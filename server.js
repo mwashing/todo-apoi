@@ -8,15 +8,7 @@ var todos = [];
 var todoNextId = 1; 
 
 // helper functions
-function findTodo(todoId){
-	var matchedTodo; 
-	todos.forEach(function(todo){
-		if(todo.id === todoId){
-			matchedTodo = todo;
-		}
-	});
-	return matchedTodo;
-}
+
 // add in any middleware
 app.use(bodyParser.json());
 //create a get 
@@ -126,6 +118,16 @@ app.put('/todos/:id',function(req,res){
 		res.status(500).send();
 	});
 
+});
+
+app.post('/users', function(req,res){
+	var body = _.pick(req.body,'email','password');
+	console.log(body);
+	db.user.create(body).then(function(user){
+		res.json(user.toJSON());
+	}, function(e){
+		res.status(400).json(e);
+	});
 });
 
 db.sequelize.sync().then(function(){
