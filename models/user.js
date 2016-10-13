@@ -1,3 +1,7 @@
+var bcrypt = require('bcryptjs');
+var _ = require('underscore');
+
+
 module.exports = function(sequelize, dataTypes){
 	return sequelize.define('user',{
 		email: {
@@ -8,11 +12,25 @@ module.exports = function(sequelize, dataTypes){
 				isEmail:true
 			}
 		}, 
+		salt: {
+			type: dataTypes.STRING
+		},
+		password_hash: {
+			type: dataTypes.STRING
+		},
 		password: {
-			type: dataTypes.STRING, 
+			type: dataTypes.VIRTUAL, 
 			allowNull: false, 
 			validate: {
 				len: [7,100]
+			},
+			set: function(value){
+				var salt = bcrypt.genSaltSync(10);
+				var hashedPassword = bcrypt.hashSync(value,salt);
+
+				this.setDataValue('password',value);
+				this.setDataValue('salt', salt);
+				this.setDataValue('password_hash', hashedPassword);
 			}
 
 		}
@@ -20,12 +38,17 @@ module.exports = function(sequelize, dataTypes){
 	{
 		hooks:{
 			beforeValidate: function(user, options){
-				console.log("in validate method for email");
 				var email = user.email;
 				if(email && typeof email === 'string'){
 					user.email = user.email.toLowerCase();
-					console.log("done validation email is: " + email);
 				}
+			}
+		},
+
+		instanceMethods:{
+			toPublicJSON: function(){
+				var json = this.toJSON();
+				return _.pick(json,'id','email','createdAt','updatedAt');
 			}
 		}
 	}
