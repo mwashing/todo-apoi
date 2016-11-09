@@ -31,7 +31,7 @@ app.get('/todos', middleware.requireAuthentication, function(req,res){
 	}
 
 	// check for user association
-	where.userId = req.user.id;
+	where.userId = req.user.get('id');
 	console.log("where id: " + where.userId);
 	// check for q property 
 	if(query.hasOwnProperty('q') && query.q.length > 0) {
@@ -64,15 +64,23 @@ app.post('/todos', middleware.requireAuthentication, function(req,res){
 
 // get request to get a single todo
 app.get('/todos/:id', middleware.requireAuthentication, function(req,res){
+	// create the where object with the query
 	var todoId = parseInt(req.params.id,10);
-	db.todo.findById(todoId).then(function(todo){
+	var where = {
+		id: todoId,
+		userId: req.user.get('id')
+	};
+	db.todo.findOne({
+		where: where
+	}).then(function(todo){
 		if(!!todo){
-			res.json(todo.toJSON());
+			res.json(todo);
 		}
 		else{
 			res.status(400).send()
 		}
 	}).catch(function(e){
+		console.log(e);
 		res.status(500).send();
 	});
 });
@@ -80,9 +88,11 @@ app.get('/todos/:id', middleware.requireAuthentication, function(req,res){
 // delete request to remove single todo
 app.delete('/todos/:id', middleware.requireAuthentication, function(req,res){
 	var todoId = parseInt(req.params.id);
+	var userId = req.user.get('id');
 	if(todoId){
 		db.todo.destroy({where: {
-			id:todoId
+			id:todoId,
+			userId:userId
 		} 
 	}).then(function(rowsDeleted){
 			if(rowsDeleted === 0){
@@ -103,6 +113,10 @@ app.put('/todos/:id', middleware.requireAuthentication, function(req,res){
 	var todoId = parseInt(req.params.id);
 	var body = _.pick(req.body,'completed','description');
 	var fieldsToUpdate = {};
+	var where = {
+		id:todoId,
+		userId: req.user.get('id')
+	}
 
 	// check for completed property
 	if(body.hasOwnProperty("completed")){
@@ -115,7 +129,9 @@ app.put('/todos/:id', middleware.requireAuthentication, function(req,res){
 	} 
 
 	// execute update query
-	db.todo.findById(todoId).then(function(todo){
+	db.todo.findOne({
+		where: where
+	}).then(function(todo){
 		if(todo){
 			todo.update(fieldsToUpdate).then(function(todo){
 				res.json(todo.toJSON());
