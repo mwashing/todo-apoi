@@ -29,6 +29,10 @@ app.get('/todos', middleware.requireAuthentication, function(req,res){
 	} else if(query.hasOwnProperty('completed') && query.completed === 'false'){
 		where.completed = false;
 	}
+
+	// check for user association
+	where.userId = req.user.id;
+	console.log("where id: " + where.userId);
 	// check for q property 
 	if(query.hasOwnProperty('q') && query.q.length > 0) {
 		where.description = { $like: '%'+query.q+'%'};
@@ -47,8 +51,13 @@ app.get('/todos', middleware.requireAuthentication, function(req,res){
 app.post('/todos', middleware.requireAuthentication, function(req,res){
 	var body = _.pick(req.body,'description','completed');
 	db.todo.create(body).then(function(todo){
-		res.json(todo.toJSON());
-	}).catch(function(e){
+		req.user.addTodo(todo).then(function(){
+			//reloading to force the association
+			return todo.reload();
+		}).then(function (todo){
+			res.json(todo.toJSON());
+		});
+	},function(e){
 		res.status(400).json(e);
 	});
 });
